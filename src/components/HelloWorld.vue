@@ -11,9 +11,10 @@
                   Photo Upload
                 </label>
                 <b-button variant="success" @click="generatePhotoDetails">Submit</b-button>
+                <b-button variant="info" @click="getLastUploadedPhoto">Import</b-button>
               </b-card-text>
               <b-card-text v-show="showPhotoEditor">
-                <b-button variant="outline-primary">Save</b-button>
+                <b-button variant="outline-primary" @click="addToStore(photoDetails)">Save</b-button>
                 <b-button variant="outline-primary" @click="RotateCanvasImage">Rotate</b-button>
                 <b-button variant="outline-primary" @click="ScaleCanvasImage">Scale</b-button>
                 <b-button variant="outline-primary" @click="ResetCanvasImage">Reset</b-button>
@@ -23,7 +24,7 @@
         </b-row>
       </b-card>
     </div>
-    <canvas height="500" width="700" id="imageCanvas" ref="imageCanvas"></canvas>
+    <canvas height="960" width="1440" id="imageCanvas" ref="imageCanvas"></canvas>
     <div v-show="showPhotoDesc">
       <b-card no-body class="overflow-hidden text-center">
         <b-row no-gutters>
@@ -42,6 +43,8 @@
 </template>
 
 <script>
+import { Store } from "../store/Store";
+
 var img,
   i = 0;
 export default {
@@ -54,6 +57,25 @@ export default {
     };
   },
   methods: {
+    /**
+     * Add to store.
+     *
+     * @param {object} photo
+     * @public
+     */
+    addToStore(photo) {
+      photo.src = img.src;
+      Store.addToStore(photo);
+    },
+
+    getLastUploadedPhoto() {
+      if (Store.store && Store.store.length) {
+        this.photoDetails = Store.store.pop();
+        this.showPhotoDesc = true;
+        img.src = this.photoDetails.src;
+      }
+    },
+
     updateCanvasImage(e) {
       var self = this;
       this.showPhotoDesc = false;
@@ -74,14 +96,55 @@ export default {
       reader.readAsDataURL(files[0]);
     },
 
+    fitImageOn(canvas, imageObj) {
+      var imageAspectRatio = imageObj.width / imageObj.height;
+      var canvasAspectRatio = canvas.width / canvas.height;
+      var renderableHeight, renderableWidth, xStart, yStart;
+      var context = canvas.getContext("2d");
+
+      // If image's aspect ratio is less than canvas's we fit on height
+      // and place the image centrally along width
+      if (imageAspectRatio < canvasAspectRatio) {
+        renderableHeight = canvas.height;
+        renderableWidth = imageObj.width * (renderableHeight / imageObj.height);
+        xStart = (canvas.width - renderableWidth) / 2;
+        yStart = 0;
+      }
+
+      // If image's aspect ratio is greater than canvas's we fit on width
+      // and place the image centrally along height
+      else if (imageAspectRatio > canvasAspectRatio) {
+        renderableWidth = canvas.width;
+        renderableHeight = imageObj.height * (renderableWidth / imageObj.width);
+        xStart = 0;
+        yStart = (canvas.height - renderableHeight) / 2;
+      }
+
+      // Happy path - keep aspect ratio
+      else {
+        renderableHeight = canvas.height;
+        renderableWidth = canvas.width;
+        xStart = 0;
+        yStart = 0;
+      }
+      context.clearRect(0, 0, 1200, 1000);
+      context.drawImage(
+        imageObj,
+        xStart,
+        yStart,
+        renderableWidth,
+        renderableHeight
+      );
+    },
+
     drawCanvasImage(img) {
       this.showPhotoEditor = true;
       var canvas = this.$refs.imageCanvas;
-      canvas.width = img.width;
-      canvas.height = img.height;
 
       var ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0);
+      ctx.clearRect(0, 0, 1200, 1000);
+      //ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      this.fitImageOn(canvas, img);
     },
 
     RotateCanvasImage() {

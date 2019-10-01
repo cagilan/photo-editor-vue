@@ -30,3 +30,5 @@ npm test
 For a detailed explanation on how things work, check out the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
 
 https://michaeltroutt.com/uploading-an-image-to-an-html-canvas-element-with-vue2/
+
+https://sadique.io/blog/2013/10/03/fitting-an-image-in-to-a-canvas-object/
