@@ -13,8 +13,15 @@
                 <b-button variant="success" @click="generatePhotoDetails">Submit</b-button>
                 <b-button variant="info" @click="getLastUploadedPhoto">Import</b-button>
               </b-card-text>
+              <b-alert
+                :variant="msgVariant"
+                :show="dismissCountDown"
+                dismissible
+                @dismissed="dismissCountDown=0"
+                @dismiss-count-down="countDownChanged"
+              >{{userMessage}}</b-alert>
               <b-card-text v-show="showPhotoEditor">
-                <b-button variant="outline-primary" @click="addToStore(photoDetails)">Save</b-button>
+                <b-button variant="outline-primary" @click="addToStore(photoDetails);">Save</b-button>
                 <b-button variant="outline-primary" @click="RotateCanvasImage">Rotate</b-button>
                 <b-button variant="outline-primary" @click="ScaleCanvasImage">Scale</b-button>
                 <b-button variant="outline-primary" @click="ResetCanvasImage">Reset</b-button>
@@ -24,16 +31,15 @@
         </b-row>
       </b-card>
     </div>
-    <canvas height="960" width="1440" id="imageCanvas" ref="imageCanvas"></canvas>
+    <canvas v-show="isPhotoUploaded" height="960" width="1440" id="imageCanvas" ref="imageCanvas"></canvas>
     <div v-show="showPhotoDesc">
       <b-card no-body class="overflow-hidden text-center">
         <b-row no-gutters>
           <b-col md="12">
             <b-card-body title="Print Description">
-              <b-card-text>{{photoDetails.name}}</b-card-text>
-              <b-card-text>{{photoDetails.size}}</b-card-text>
-              <b-card-text>{{photoDetails.type}}</b-card-text>
-              <b-card-text>{{photoDetails.lastModifiedDate}}</b-card-text>
+              <b-card-text>Image Name: {{photoDetails.name}}</b-card-text>
+              <b-card-text>Loaded Image w/dimensions: {{photoDetails.XPosition}}X{{photoDetails.YPosition}}</b-card-text>
+              <b-card-text>Loaded Image position: {{photoDetails.imageWidth}}X{{photoDetails.imageHeight}}</b-card-text>
             </b-card-body>
           </b-col>
         </b-row>
@@ -46,14 +52,21 @@
 import { Store } from "../store/Store";
 
 var img,
-  i = 0;
+  i = 0,
+  canvas,
+  context;
 export default {
   name: "HelloWorld",
   data: function() {
     return {
       photoDetails: [],
       showPhotoDesc: false,
-      showPhotoEditor: false
+      showPhotoEditor: false,
+      userMessage: false,
+      dismissSecs: 5,
+      dismissCountDown: 0,
+      msgVariant: "success",
+      isPhotoUploaded: false
     };
   },
   methods: {
@@ -63,22 +76,49 @@ export default {
      * @param {object} photo
      * @public
      */
+
     addToStore(photo) {
       photo.src = img.src;
+      photo.XPosition = this.photoDetails.XPosition;
+      photo.YPosition = this.photoDetails.YPosition;
+      photo.imageWidth = this.photoDetails.imageWidth;
+      photo.imageHeight = this.photoDetails.imageHeight;
       Store.addToStore(photo);
+      this.msgVariant = "success";
+      this.userMessage = "Saved Successfully!!!";
+      this.showAlert();
+    },
+
+    countDownChanged(dismissCountDown) {
+      this.dismissCountDown = dismissCountDown;
+    },
+
+    showAlert() {
+      this.dismissCountDown = this.dismissSecs;
     },
 
     getLastUploadedPhoto() {
       if (Store.store && Store.store.length) {
-        this.photoDetails = Store.store.pop();
+        this.photoDetails = Store.store.slice(-1)[0];
         this.showPhotoDesc = true;
+        img = new Image();
         img.src = this.photoDetails.src;
+        this.drawCanvasImage(img);
+        this.msgVariant = "success";
+        this.userMessage = "Photo Imported Successfully!!!";
+      } else {
+        this.msgVariant = "danger";
+        this.userMessage = "No photo is available to import";
       }
+      this.showAlert();
     },
 
     updateCanvasImage(e) {
       var self = this;
       this.showPhotoDesc = false;
+      this.isPhotoUploaded = true;
+      canvas = document.getElementById("imageCanvas");
+      context = canvas.getContext("2d");
 
       var reader,
         files = e.target.files;
@@ -100,7 +140,6 @@ export default {
       var imageAspectRatio = imageObj.width / imageObj.height;
       var canvasAspectRatio = canvas.width / canvas.height;
       var renderableHeight, renderableWidth, xStart, yStart;
-      var context = canvas.getContext("2d");
 
       // If image's aspect ratio is less than canvas's we fit on height
       // and place the image centrally along width
@@ -127,54 +166,65 @@ export default {
         xStart = 0;
         yStart = 0;
       }
-      context.clearRect(0, 0, 1200, 1000);
+      this.photoDetails.XPosition = this.photoDetails.XPosition
+        ? this.photoDetails.XPosition
+        : Math.round(xStart);
+      this.photoDetails.YPosition = this.photoDetails.YPosition
+        ? this.photoDetails.YPosition
+        : Math.round(yStart);
+      this.photoDetails.imageWidth = this.photoDetails.imageWidth
+        ? this.photoDetails.imageWidth
+        : Math.round(renderableWidth);
+      this.photoDetails.imageHeight = this.photoDetails.imageHeight
+        ? this.photoDetails.imageHeight
+        : Math.round(renderableHeight);
+      context.clearRect(0, 0, 2000, 2000);
       context.drawImage(
         imageObj,
-        xStart,
-        yStart,
+        this.photoDetails.XPosition,
+        this.photoDetails.YPosition,
         renderableWidth,
         renderableHeight
       );
     },
 
     drawCanvasImage(img) {
-      this.showPhotoEditor = true;
-      var canvas = this.$refs.imageCanvas;
-
-      var ctx = canvas.getContext("2d");
-      ctx.clearRect(0, 0, 1200, 1000);
-      //ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       this.fitImageOn(canvas, img);
     },
 
     RotateCanvasImage() {
-      var canvas = this.$refs.imageCanvas;
-      var context = canvas.getContext("2d");
       context.save();
       context.translate(img.width / 2, img.height / 2);
       context.rotate(i / 180 / Math.PI);
       context.drawImage(img, -(img.width / 2), -(img.height / 2));
       context.restore();
       i += 10;
+      this.photoDetails.XPosition = Math.round(-(img.width / 2));
+      this.photoDetails.YPosition = Math.round(-(img.height / 2));
     },
 
     ScaleCanvasImage() {
-      var canvas = this.$refs.imageCanvas;
-      var context = canvas.getContext("2d");
       context.drawImage(img, 0, 0);
       context.scale(1.5, 2.0);
       context.drawImage(img, 50, 0);
     },
 
     ResetCanvasImage() {
-      var canvas = this.$refs.imageCanvas;
-      var context = canvas.getContext("2d");
       context.scale(1, 1);
       context.drawImage(img, 0, 0);
     },
 
     generatePhotoDetails() {
-      this.showPhotoDesc = true;
+      if (Object.keys(this.photoDetails).length) {
+        this.showPhotoEditor = true;
+        this.msgVariant = "success";
+        this.userMessage = "Submitted Successfully!!!";
+        this.showPhotoDesc = true;
+      } else {
+        this.msgVariant = "danger";
+        this.userMessage = "Please upload your photo";
+      }
+      this.showAlert();
     }
   }
 };

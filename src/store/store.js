@@ -16,9 +16,10 @@ export const Store = new Vue({
             if (locationInStore === -1) {
                 this.store.push({
                     name: photo.name,
-                    size: photo.size,
-                    type: photo.type,
-                    lastModifiedDate: photo.lastModifiedDate,
+                    XPosition: photo.XPosition,
+                    YPosition: photo.YPosition,
+                    imageWidth: photo.imageWidth,
+                    imageHeight: photo.imageHeight,
                     src: photo.src
                 })
             }
