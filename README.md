@@ -26,9 +26,30 @@ npm run e2e
 # run all tests
 npm test
 ```
+# use cases
 
-For a detailed explanation on how things work, check out the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
+User could browse and upload photo from local PC
 
-https://michaeltroutt.com/uploading-an-image-to-an-html-canvas-element-with-vue2/
+User could see the photo description by clicking Submit button
 
-https://sadique.io/blog/2013/10/03/fitting-an-image-in-to-a-canvas-object/
+User could imported last Saved Photo by clicking Import button. Note: User should save any one of picture to import
+
+User imported photo displayed on Canvas based on photo description.
+
+User could do Rotate/Scale/Reset uploaded photo
+
+# Things to Highlight
+
+Use Vue.js for this development
+
+Used Vue Store for state management
+
+Used Vue Bootstrap for design
+
+Used my own implementation for photo resize
+
+Error scnearios are handled
+
+
+
+

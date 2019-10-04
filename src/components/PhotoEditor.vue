@@ -56,7 +56,7 @@ var img,
   canvas,
   context;
 export default {
-  name: "HelloWorld",
+  name: "PhotoEditor",
   data: function() {
     return {
       photoDetails: [],
@@ -71,8 +71,7 @@ export default {
   },
   methods: {
     /**
-     * Add to store.
-     *
+     * Add to store.     *
      * @param {object} photo
      * @public
      */
@@ -97,6 +96,11 @@ export default {
       this.dismissCountDown = this.dismissSecs;
     },
 
+    /* getLastUploadedPhoto
+     * To import recently uploaded image
+     * @public
+     */
+
     getLastUploadedPhoto() {
       if (Store.store && Store.store.length) {
         this.photoDetails = Store.store.slice(-1)[0];
@@ -112,6 +116,12 @@ export default {
       }
       this.showAlert();
     },
+
+    /* updateCanvasImage
+     * To update image on browse
+     *@param {event} element to get recently uploaded element
+     * @public
+     */
 
     updateCanvasImage(e) {
       var self = this;
@@ -135,6 +145,12 @@ export default {
       self.photoDetails = files[0];
       reader.readAsDataURL(files[0]);
     },
+
+    /* fitImageOn
+     * To fit image on canvas
+     *@param canvas element and imageObj image source
+     * @public
+     */
 
     fitImageOn(canvas, imageObj) {
       var imageAspectRatio = imageObj.width / imageObj.height;
@@ -187,10 +203,20 @@ export default {
         renderableHeight
       );
     },
+    /**
+     * drawCanvasImage
+     * To draw canvas image
+     * @public
+     */
 
     drawCanvasImage(img) {
       this.fitImageOn(canvas, img);
     },
+    /**
+     * RotateCanvasImage
+     * To rotate canvas image
+     * @public
+     */
 
     RotateCanvasImage() {
       context.save();
@@ -203,17 +229,33 @@ export default {
       this.photoDetails.YPosition = Math.round(-(img.height / 2));
     },
 
+    /**
+     * ScaleCanvasImage
+     * To resize canvas image
+     * @public
+     */
+
     ScaleCanvasImage() {
       context.drawImage(img, 0, 0);
       context.scale(1.5, 2.0);
       context.drawImage(img, 50, 0);
     },
 
+    /**
+     * ResetCanvasImage
+     * Reset canvas image
+     * @public
+     */
     ResetCanvasImage() {
       context.scale(1, 1);
       context.drawImage(img, 0, 0);
     },
 
+    /**
+     * generatePhotoDetails
+     * Generate photo details and description
+     * @public
+     */
     generatePhotoDetails() {
       if (Object.keys(this.photoDetails).length) {
         this.showPhotoEditor = true;
@@ -252,8 +294,5 @@ input[type="file"] {
 }
 .custom-file-upload {
   margin-top: 8px;
-}
-#imageCanvas {
-  border: 1px solid red;
 }
 </style>
